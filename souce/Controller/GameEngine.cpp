@@ -65,8 +65,8 @@ void GameEngine::handlePhase1() {
         if (rules.isMillCreated(board, targetPos, currentTurn)) {
             currentState = MILL_STRIKE; // Chuyển sang trạng thái ăn quân
         } else {
-            // Nếu cả 2 bên đặt đủ 9 quân thì chuyển sang Phase 2 di chuyển
-            if (piecesPlacedA >= 9 && piecesPlacedB >= 9) {
+            // Nếu cả 2 bên đặt đủ 8 quân thì chuyển sang Phase 2 di chuyển
+            if (piecesPlacedA >= 8 && piecesPlacedB >= 8) {
                 currentState = PHASE_2_MOVING;
             }
             switchTurn();
@@ -133,7 +133,7 @@ void GameEngine::handleMillStrike() {
             currentState = GAME_OVER;
         } else {
             // Trả về trạng thái cũ dựa trên số lượng quân đã đặt
-            if (piecesPlacedA < 9 || piecesPlacedB < 9) currentState = PHASE_1_PLACING;
+            if (piecesPlacedA < 8 || piecesPlacedB < 8) currentState = PHASE_1_PLACING;
             else currentState = PHASE_2_MOVING;
             
             switchTurn();

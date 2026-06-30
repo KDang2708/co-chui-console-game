@@ -6,8 +6,8 @@ private:
     int board[24];          // Mảng lưu trạng thái bàn cờ hiện tại
     GameState currentState; // Trạng thái hiện tại của game
     Player currentTurn;     // Lượt của ai (PLAYER_A hay PLAYER_B)
-    int piecesPlacedA;      // Số quân Player A đã đặt ở Phase 1 (Tối đa 9)
-    int piecesPlacedB;      // Số quân Player B đã đặt ở Phase 1 (Tối đa 9)
+    int piecesPlacedA;      // Số quân Player A đã đặt ở Phase 1 (Tối đa 8)
+    int piecesPlacedB;      // Số quân Player B đã đặt ở Phase 1 (Tối đa 8)
     int gameMode;           // 1: Người vs Người, 2: Người vs Bot
 
 public:
