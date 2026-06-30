@@ -45,7 +45,7 @@ void GameEngine::handleMenu() {
 
 void GameEngine::handlePhase1() {
     ConsoleUI ui;
-    GameRules rules;
+    GameR ules rules;
     
     ui.drawBoard(board); // Gọi TV3 vẽ bàn cờ
     std::cout << "Luot cua Player " << currentTurn << " (Giai doan dat quan)\n";
