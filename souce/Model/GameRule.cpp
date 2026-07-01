@@ -1,93 +1,25 @@
 //  GameRules.cpp  –  Game Logic cho Cờ Chùi (Nine Men's Morris)
-//  Game Logic Specialist
+//  Thành viên 2 – Game Logic Specialist
 //  Branch: feature/model
+//
+//  Dùng chung dữ liệu nền tảng từ common.h (sở hữu bởi TV1):
+//    - enum Player        { EMPTY, PLAYER_A, PLAYER_B }
+//    - enum GameState      { MENU, PHASE_1_PLACING, PHASE_2_MOVING,
+//                             FLYING_MODE, MILL_STRIKE, GAME_OVER }
+//    - ADJACENCY_LIST      vector<vector<int>> 24 phần tử
+//    - MILL_LINES[16][3]   16 bộ ba tạo Mill
 
 #include "GameRules.h"
-#include <algorithm>   
 
-//  1. KHỞI TẠO DỮ LIỆU TĨNH
+static const int MILLS_COUNT = 16;
 
-// ----------------------------------------------------------
-//  Danh sách cạnh kề (Adjacency List)
-//  Mỗi hàng là một cặp {a, b} cho biết ô a và ô b liền kề nhau.
-//
-//  Sơ đồ bàn cờ (Nine Men's Morris chuẩn – 24 ô):
-//
-//   0 ─────────── 1 ─────────── 2
-//   │             │             │
-//   │   3 ─────── 4 ─────── 5   │
-//   │   │         │         │   │
-//   │   │   6 ─── 7 ─── 8   │   │
-//   9 ─10 ──11         12 ──13 ─14
-//   │   │   15 ──16 ──17    │   │
-//   │   │         │         │   │
-//   │   18 ───── 19 ───── 20    │
-//   │             │             │
-//   21 ────────  22 ─────────── 23
-//
-// ----------------------------------------------------------
-const int GameRules::ADJACENCY[][2] = {
-    // Vòng ngoài (vòng số 1) – ngang
-    {0, 1}, {1, 2},
-    {3, 4}, {4, 5},
-    {6, 7}, {7, 8},
-    {15,16},{16,17},
-    {18,19},{19,20},
-    {21,22},{22,23},
-    // Vòng ngoài – dọc
-    {0, 9}, {9,21},
-    {3,10},{10,18},
-    {6,11},{11,15},
-    {8,12},{12,17},
-    {5,13},{13,20},
-    {2,14},{14,23},
-    // Nối giữa các vòng – cạnh giữa bàn
-    {1, 4}, {4, 7},
-    {9,10},{10,11},
-    {12,13},{13,14},
-    {16,19},{19,22}
-};
-const int GameRules::ADJACENCY_COUNT =
-    sizeof(GameRules::ADJACENCY) / sizeof(GameRules::ADJACENCY[0]);
+//  HÀM NỘI BỘ (PRIVATE HELPERS)
 
-// ----------------------------------------------------------
-//  Tất cả 16 bộ ba tạo Mill (hàng 3 thẳng hàng)
-// ----------------------------------------------------------
-const int GameRules::MILLS[][3] = {
-    // Hàng ngang – vòng ngoài
-    { 0,  1,  2},
-    { 3,  4,  5},
-    { 6,  7,  8},
-    {15, 16, 17},
-    {18, 19, 20},
-    {21, 22, 23},
-    // Hàng dọc – vòng ngoài
-    { 0,  9, 21},
-    { 3, 10, 18},
-    { 6, 11, 15},
-    { 8, 12, 17},
-    { 5, 13, 20},
-    { 2, 14, 23},
-    // Hàng ngang – vòng giữa (nối các vòng)
-    { 1,  4,  7},
-    {16, 19, 22},
-    // Hàng dọc – vòng giữa
-    { 9, 10, 11},
-    {12, 13, 14}
-};
-const int GameRules::MILLS_COUNT =
-    sizeof(GameRules::MILLS) / sizeof(GameRules::MILLS[0]);
-
-
-//  2. HÀM NỘI BỘ (PRIVATE HELPERS)
-
-// Trả về true nếu pos1 và pos2 có cạnh nối trực tiếp
+// Trả về true nếu pos1 và pos2 có cạnh nối trực tiếp (tra ADJACENCY_LIST)
 bool GameRules::areAdjacent(int pos1, int pos2) {
-    for (int i = 0; i < ADJACENCY_COUNT; ++i) {
-        if ((ADJACENCY[i][0] == pos1 && ADJACENCY[i][1] == pos2) ||
-            (ADJACENCY[i][0] == pos2 && ADJACENCY[i][1] == pos1)) {
-            return true;
-        }
+    if (pos1 < 0 || pos1 >= BOARD_SIZE) return false;
+    for (int neighbor : ADJACENCY_LIST[pos1]) {
+        if (neighbor == pos2) return true;
     }
     return false;
 }
@@ -100,60 +32,57 @@ bool GameRules::isMillTriple(const int board[BOARD_SIZE],
             board[c] == player);
 }
 
-//  3. PHASE 1 – KIỂM TRA ĐẶT QUÂN
+
+//  PHASE 1 – KIỂM TRA ĐẶT QUÂN
 
 MoveResult GameRules::isValidPlacement(const int board[BOARD_SIZE], int pos) {
-    // Kiểm tra chỉ số nằm trong phạm vi hợp lệ
     if (pos < 0 || pos >= BOARD_SIZE)
         return MoveResult::INVALID_OUT_OF_RANGE;
 
-    // Ô phải trống mới được đặt
     if (board[pos] != EMPTY)
         return MoveResult::INVALID_OCCUPIED;
 
     return MoveResult::VALID;
 }
 
-//  4. PHASE 2 – KIỂM TRA DI CHUYỂN QUÂN
+
+//  PHASE 2 / FLYING_MODE – KIỂM TRA DI CHUYỂN QUÂN
 
 MoveResult GameRules::isValidMove(const int board[BOARD_SIZE],
-                                   int from, int to, int player) {
-    // Kiểm tra phạm vi cả hai chỉ số
+                                   int from, int to, int player,
+                                   bool isFlying) {
     if (from < 0 || from >= BOARD_SIZE ||
         to   < 0 || to   >= BOARD_SIZE)
         return MoveResult::INVALID_OUT_OF_RANGE;
 
-    // Ô nguồn phải có quân
     if (board[from] == EMPTY)
         return MoveResult::INVALID_NO_PIECE;
 
-    // Quân tại ô nguồn phải là của player đang đi
     if (board[from] != player)
         return MoveResult::INVALID_WRONG_PLAYER;
 
-    // Ô đích phải trống
     if (board[to] != EMPTY)
         return MoveResult::INVALID_OCCUPIED;
 
-    // Ô đích phải liền kề ô nguồn
-    if (!areAdjacent(from, to))
+    // FLYING_MODE (chỉ còn 3 quân): được di chuyển tới bất kỳ ô trống
+    // nào, bỏ qua điều kiện liền kề. Ngược lại (PHASE_2_MOVING) bắt
+    // buộc liền kề theo ADJACENCY_LIST.
+    if (!isFlying && !areAdjacent(from, to))
         return MoveResult::INVALID_NOT_ADJACENT;
 
     return MoveResult::VALID;
 }
 
-//  5. KIỂM TRA MILL (HÀNG 3)
+
+//  KIỂM TRA MILL (HÀNG 3)
 
 bool GameRules::checkMill(const int board[BOARD_SIZE], int pos, int player) {
-    // Duyệt tất cả 16 bộ ba Mill, xem pos có thuộc bộ nào không
     for (int i = 0; i < MILLS_COUNT; ++i) {
-        int a = MILLS[i][0];
-        int b = MILLS[i][1];
-        int c = MILLS[i][2];
+        int a = MILL_LINES[i][0];
+        int b = MILL_LINES[i][1];
+        int c = MILL_LINES[i][2];
 
-        // Bộ ba này có chứa pos không?
         if (pos == a || pos == b || pos == c) {
-            // Cả 3 ô đều là quân của player → Mill!
             if (isMillTriple(board, a, b, c, player))
                 return true;
         }
@@ -161,51 +90,49 @@ bool GameRules::checkMill(const int board[BOARD_SIZE], int pos, int player) {
     return false;
 }
 
-//  6. KIỂM TRA ĂN QUÂN (REMOVE PIECE)
+
+//  KIỂM TRA ĂN QUÂN (REMOVE PIECE) – dùng cho state MILL_STRIKE
 
 bool GameRules::canRemovePiece(const int board[BOARD_SIZE],
                                 int pos, int opponent) {
-    // Ô pos phải có quân của đối thủ
     if (board[pos] != opponent)
         return false;
 
-    // Nếu quân đang nằm trong Mill → mặc định KHÔNG được ăn
     bool inMill = checkMill(board, pos, opponent);
     if (!inMill)
-        return true; // Không trong Mill → ăn được ngay
+        return true;
 
-    // Ngoại lệ: Nếu TẤT CẢ quân đối thủ đều trong Mill
-    // → được phép ăn quân trong Mill (không còn lựa chọn nào khác)
+    // Ngoại lệ: nếu TẤT CẢ quân đối thủ đều trong Mill → được ăn
     for (int i = 0; i < BOARD_SIZE; ++i) {
         if (board[i] == opponent && !checkMill(board, i, opponent)) {
-            // Còn ít nhất 1 quân đối thủ ngoài Mill → không ăn pos
             return false;
         }
     }
-
-    // Toàn bộ quân đối thủ đều trong Mill → được phép ăn
     return true;
 }
 
-//  7. KIỂM TRA ĐIỀU KIỆN THUA
+
+//  KIỂM TRA ĐIỀU KIỆN THUA
 
 bool GameRules::isLoser(const int board[BOARD_SIZE],
                          int player,
                          int piecesOnBoard,
                          int piecesInHand,
-                         GamePhase phase) {
+                         GameState state) {
 
-    // Điều kiện 1: Phase 2 mà còn dưới 3 quân → thua
-    if (phase == GamePhase::PHASE2_MOVING && piecesOnBoard < 3)
+    // PHASE_2_MOVING hoặc FLYING_MODE mà còn dưới 3 quân → thua
+    if ((state == PHASE_2_MOVING || state == FLYING_MODE) &&
+        piecesOnBoard < 3)
         return true;
 
-    // Điều kiện 2: Hết quân hoàn toàn → thua
+    // Hết quân hoàn toàn → thua
     if (piecesOnBoard == 0 && piecesInHand == 0)
         return true;
 
-    // Điều kiện 3: Phase 2 mà không còn nước đi hợp lệ nào → thua
-    if (phase == GamePhase::PHASE2_MOVING) {
-        auto moves = getAllValidMoves(board, player);
+    // Không còn nước đi hợp lệ nào → thua
+    if (state == PHASE_2_MOVING || state == FLYING_MODE) {
+        bool flying = (state == FLYING_MODE);
+        auto moves = getAllValidMoves(board, player, flying);
         if (moves.empty())
             return true;
     }
@@ -213,41 +140,40 @@ bool GameRules::isLoser(const int board[BOARD_SIZE],
     return false;
 }
 
-//  8. CÁC HÀM TIỆN ÍCH (UTILITY)
 
-// Trả về danh sách các ô liền kề với pos
-std::vector<int> GameRules::getAdjacentPositions(int pos) {
-    std::vector<int> result;
-    if (pos < 0 || pos >= BOARD_SIZE) return result;
+//  CÁC HÀM TIỆN ÍCH (UTILITY)
 
-    for (int i = 0; i < ADJACENCY_COUNT; ++i) {
-        if (ADJACENCY[i][0] == pos) result.push_back(ADJACENCY[i][1]);
-        if (ADJACENCY[i][1] == pos) result.push_back(ADJACENCY[i][0]);
-    }
-    return result;
+const std::vector<int>& GameRules::getAdjacentPositions(int pos) {
+    return ADJACENCY_LIST[pos];
 }
 
-// Trả về tất cả nước đi hợp lệ Phase 2 dưới dạng {from, to}
 std::vector<std::pair<int,int>> GameRules::getAllValidMoves(
-    const int board[BOARD_SIZE], int player) {
+    const int board[BOARD_SIZE], int player, bool isFlying) {
 
     std::vector<std::pair<int,int>> moves;
 
-    for (int from = 0; from < BOARD_SIZE; ++from) {
-        if (board[from] != player) continue;
-
-        // Thử di chuyển sang từng ô liền kề
-        auto neighbors = getAdjacentPositions(from);
-        for (int to : neighbors) {
-            if (board[to] == EMPTY) {
-                moves.push_back({from, to});
+    if (isFlying) {
+        // FLYING_MODE: mỗi quân của player có thể tới BẤT KỲ ô trống nào
+        for (int from = 0; from < BOARD_SIZE; ++from) {
+            if (board[from] != player) continue;
+            for (int to = 0; to < BOARD_SIZE; ++to) {
+                if (board[to] == EMPTY)
+                    moves.push_back({from, to});
+            }
+        }
+    } else {
+        // PHASE_2_MOVING: chỉ tới ô liền kề theo ADJACENCY_LIST
+        for (int from = 0; from < BOARD_SIZE; ++from) {
+            if (board[from] != player) continue;
+            for (int to : ADJACENCY_LIST[from]) {
+                if (board[to] == EMPTY)
+                    moves.push_back({from, to});
             }
         }
     }
     return moves;
 }
 
-// Trả về tất cả ô đối thủ có thể bị ăn
 std::vector<int> GameRules::getRemovablePieces(
     const int board[BOARD_SIZE], int opponent) {
 
@@ -259,11 +185,76 @@ std::vector<int> GameRules::getRemovablePieces(
     return removable;
 }
 
-// Đếm số quân của player còn trên bàn
 int GameRules::countPieces(const int board[BOARD_SIZE], int player) {
     int count = 0;
     for (int i = 0; i < BOARD_SIZE; ++i) {
         if (board[i] == player) ++count;
     }
     return count;
+}
+
+
+//  ALIAS — khớp API mà GameEngine.cpp (TV1) đang gọi trực tiếp.
+//  Xem giải thích chi tiết trong GameRules.h.
+
+bool GameRules::isValidMove(const int board[BOARD_SIZE],
+                             int from, int to, GameState state, int player) {
+
+    // Phase 1 (Đặt quân): from == -1 báo hiệu "đây không phải di
+    // chuyển, mà là đặt quân mới" — chuyển sang isValidPlacement.
+    if (state == PHASE_1_PLACING || from == -1) {
+        return isValidPlacement(board, to) == MoveResult::VALID;
+    }
+
+    // Flying mode: bỏ qua điều kiện liền kề
+    bool flying = (state == FLYING_MODE);
+    return isValidMove(board, from, to, player, flying) == MoveResult::VALID;
+}
+
+bool GameRules::isValidMove(const int board[BOARD_SIZE],
+                             int from, int to, GameState state) {
+    // Overload không có player tường minh: chỉ an toàn khi from
+    // hợp lệ và có quân (Phase 2 / Flying) — suy luận player từ
+    // chính ô nguồn. KHÔNG dùng overload này ở Phase 1 (from == -1),
+    // vì lúc đó board[from] không tồn tại / vô nghĩa.
+    if (from < 0 || from >= BOARD_SIZE) {
+        // from == -1 (đặt quân) mà gọi nhầm overload này thì không
+        // thể suy ra player → coi như không hợp lệ để báo lỗi sớm
+        // thay vì đọc ngoài mảng.
+        return false;
+    }
+
+    int player = board[from];
+    return isValidMove(board, from, to, state, player);
+}
+
+bool GameRules::isMillCreated(const int board[BOARD_SIZE], int pos, int player) {
+    return checkMill(board, pos, player);
+}
+
+bool GameRules::isGameOver(const int board[BOARD_SIZE], int player) {
+    int piecesOnBoard = countPieces(board, player);
+
+    // Suy luận đã qua Phase 1 hay chưa: nếu tổng quân cả 2 bên
+    // trên bàn đạt 18 (9+9) thì coi như Placing đã xong, không còn
+    // quân nào "trong tay" (piecesInHand = 0). Nếu chưa, coi như
+    // vẫn đang Phase 1 (piecesInHand > 0) → chưa thể thua kiểu
+    // "hết quân" hay "bị vây" theo luật Phase 2.
+    int totalOnBoard = countPieces(board, PLAYER_A) + countPieces(board, PLAYER_B);
+    bool placingDone = (totalOnBoard >= PIECES_PER_PLAYER * 2 - /*đã ăn bớt*/0)
+                        || (totalOnBoard >= 18);
+
+    if (!placingDone) {
+        // Vẫn còn trong Phase 1 theo suy luận → dùng isLoser với
+        // piecesInHand ước lượng còn lại để không báo thua nhầm.
+        int piecesInHand = PIECES_PER_PLAYER - piecesOnBoard;
+        if (piecesInHand < 0) piecesInHand = 0;
+        return isLoser(board, player, piecesOnBoard, piecesInHand,
+                       PHASE_1_PLACING);
+    }
+
+    // Đã qua Phase 1: piecesInHand = 0. Xác định FLYING_MODE nếu
+    // đúng còn 3 quân, ngược lại PHASE_2_MOVING.
+    GameState state = (piecesOnBoard == 3) ? FLYING_MODE : PHASE_2_MOVING;
+    return isLoser(board, player, piecesOnBoard, 0, state);
 }
