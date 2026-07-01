@@ -92,6 +92,10 @@ int main(int, char**) {
     ImGui::StyleColorsDark();
 
     ImGuiStyle& style = ImGui::GetStyle();
+    style.WindowPadding = ImVec2(18.0f, 18.0f);
+    style.FramePadding = ImVec2(10.0f, 8.0f);
+    style.ItemSpacing = ImVec2(12.0f, 10.0f);
+    style.ItemInnerSpacing = ImVec2(8.0f, 6.0f);
     style.WindowRounding = 16.0f;
     style.FrameRounding = 10.0f;
     style.Colors[ImGuiCol_WindowBg] = ImVec4(0.07f, 0.10f, 0.18f, 0.96f);
@@ -123,13 +127,14 @@ int main(int, char**) {
         Player winner = engine.getWinner();
         std::string message = engine.getLastMessage();
 
-        ImGui::SetNextWindowSize(ImVec2(640, 760), ImGuiCond_Always);
-        ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
-        ImGui::Begin("Cờ Chùi", NULL,
-                     ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar);
+ImGuiViewport* viewport = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos(viewport->WorkPos);
+    ImGui::SetNextWindowSize(ImVec2(720, 780), ImGuiCond_Always);
+    ImGui::Begin("Cờ Chùi", NULL,
+                 ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar);
 
-        ImGui::TextColored(ImVec4(0.70f, 0.92f, 1.00f, 1.00f), "CỜ CHÙI - NINE MEN'S MORRIS");
-        ImGui::Text("Giao dien da lien ket voi logic GameRules va GameEnd.");
+        ImGui::TextColored(ImVec4(0.74f, 0.94f, 1.00f, 1.00f), "CỜ CHÙI - NINE MEN'S MORRIS");
+        ImGui::TextWrapped("Nhan chuot len mot o tren ban de dat/chon/di chuyen quan. O click duoc se duoc hien thi net.");
         ImGui::Separator();
 
         ImGui::Columns(2, "layout", true);
@@ -138,14 +143,15 @@ int main(int, char**) {
 
         ImDrawList* drawList = ImGui::GetWindowDrawList();
         ImVec2 boardOrigin = ImGui::GetCursorScreenPos();
-        float spacing = 70.0f;
-        float nodeRadius = 18.0f;
-        ImVec2 gridOffset = ImVec2(24.0f, 24.0f);
+        float spacing = 72.0f;
+        float nodeRadius = 22.0f;
+        float clickRadius = nodeRadius + 8.0f;
+        ImVec2 gridOffset = ImVec2(28.0f, 28.0f);
 
         ImVec2 backgroundMin = boardOrigin;
-        ImVec2 backgroundMax = ImVec2(boardOrigin.x + spacing * 6 + 48.0f, boardOrigin.y + spacing * 6 + 48.0f);
-        drawList->AddRectFilled(backgroundMin, backgroundMax, IM_COL32(12, 26, 46, 220), 18.0f);
-        drawList->AddRect(backgroundMin, backgroundMax, IM_COL32(96, 165, 255, 160), 18.0f, 0, 3.0f);
+        ImVec2 backgroundMax = ImVec2(boardOrigin.x + spacing * 6 + 56.0f, boardOrigin.y + spacing * 6 + 56.0f);
+        drawList->AddRectFilled(backgroundMin, backgroundMax, IM_COL32(12, 26, 46, 230), 20.0f);
+        drawList->AddRect(backgroundMin, backgroundMax, IM_COL32(96, 165, 255, 180), 20.0f, 0, 3.5f);
 
         ImU32 lineColor = IM_COL32(140, 190, 255, 180);
         float lineThickness = 2.2f;
@@ -177,10 +183,10 @@ int main(int, char**) {
 
                 ImVec2 center = getNodePos(row, col, boardOffset, spacing);
                 ImGui::PushID(index);
-                ImGui::SetCursorScreenPos(ImVec2(center.x - nodeRadius, center.y - nodeRadius));
-                ImGui::InvisibleButton("node", ImVec2(nodeRadius * 2.0f, nodeRadius * 2.0f));
+                ImGui::SetCursorScreenPos(ImVec2(center.x - clickRadius, center.y - clickRadius));
+                ImGui::InvisibleButton("node", ImVec2(clickRadius * 2.0f, clickRadius * 2.0f));
                 bool hovered = ImGui::IsItemHovered();
-                bool pressed = ImGui::IsItemClicked();
+                bool pressed = ImGui::IsItemClicked(ImGuiMouseButton_Left);
                 bool isSelected = (selectedSource == index);
                 int value = board[index];
                 bool isRemovable = std::find(removablePositions.begin(), removablePositions.end(), index) != removablePositions.end();
@@ -193,8 +199,9 @@ int main(int, char**) {
                 ImU32 borderColor = isSelected ? IM_COL32(255, 255, 255, 230) : IM_COL32(136, 206, 255, 180);
                 if (isRemovable) borderColor = IM_COL32(255, 145, 80, 220);
 
+                drawList->AddCircleFilled(center, nodeRadius + 2.0f, IM_COL32(20, 40, 74, 220));
                 drawList->AddCircleFilled(center, nodeRadius, value == EMPTY ? IM_COL32(20, 40, 74, 220) : fillColor);
-                drawList->AddCircle(center, nodeRadius + 2.0f, borderColor, 0, 2.5f);
+                drawList->AddCircle(center, nodeRadius + 2.0f, borderColor, 0, 3.0f);
 
                 if (value != EMPTY) {
                     drawList->AddText(ImVec2(center.x - 6.0f, center.y - 8.0f), IM_COL32(255, 255, 255, 255), pieceSymbol(value));
