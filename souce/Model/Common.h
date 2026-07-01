@@ -1,6 +1,8 @@
 #pragma once
 #include <vector>
 
+static const int BOARD_SIZE = 24;
+static const int PIECES_PER_PLAYER = 8;
 
 enum Player {
     EMPTY = 0,

@@ -7,7 +7,7 @@
 namespace {
 const int INF = 1000000000;
 
-const int MILL_LINES[16][3] = {
+const int AI_MILL_LINES[16][3] = {
     {0, 1, 2}, {3, 4, 5}, {6, 7, 8}, {15, 16, 17},
     {18, 19, 20}, {21, 22, 23}, {0, 9, 21}, {3, 10, 18},
     {6, 11, 15}, {8, 12, 17}, {5, 13, 20}, {2, 14, 23},
@@ -302,9 +302,9 @@ int AIMinimax::evaluateTerminal(const int board[BOARD_SIZE], int aiPlayer, GameP
 int AIMinimax::countMills(const int board[BOARD_SIZE], int player) const {
     int count = 0;
     for (int i = 0; i < 16; ++i) {
-        if (board[MILL_LINES[i][0]] == player &&
-            board[MILL_LINES[i][1]] == player &&
-            board[MILL_LINES[i][2]] == player) {
+        if (board[AI_MILL_LINES[i][0]] == player &&
+            board[AI_MILL_LINES[i][1]] == player &&
+            board[AI_MILL_LINES[i][2]] == player) {
             ++count;
         }
     }
@@ -317,7 +317,7 @@ int AIMinimax::countPotentialMills(const int board[BOARD_SIZE], int player) cons
         int playerCount = 0;
         int emptyCount = 0;
         for (int j = 0; j < 3; ++j) {
-            int value = board[MILL_LINES[i][j]];
+            int value = board[AI_MILL_LINES[i][j]];
             if (value == player) {
                 ++playerCount;
             } else if (value == EMPTY) {

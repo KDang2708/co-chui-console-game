@@ -19,8 +19,14 @@ bool UndoRedo::undo(int board[BOARD_SIZE], Player& currentTurn, GameState& state
         return false;
     }
 
-    auto [boardState, turn, gameState, pa, pb] = history.back();
+    auto previousState = history.back();
     history.pop_back();
+
+    std::array<int, BOARD_SIZE> boardState = std::get<0>(previousState);
+    Player turn = std::get<1>(previousState);
+    GameState gameState = std::get<2>(previousState);
+    int pa = std::get<3>(previousState);
+    int pb = std::get<4>(previousState);
 
     std::array<int, BOARD_SIZE> currentBoard;
     for (int i = 0; i < BOARD_SIZE; i++) currentBoard[i] = board[i];
@@ -42,8 +48,14 @@ bool UndoRedo::redo(int board[BOARD_SIZE], Player& currentTurn, GameState& state
         return false;
     }
 
-    auto [boardState, turn, gameState, pa, pb] = redoStack.back();
+    auto nextState = redoStack.back();
     redoStack.pop_back();
+
+    std::array<int, BOARD_SIZE> boardState = std::get<0>(nextState);
+    Player turn = std::get<1>(nextState);
+    GameState gameState = std::get<2>(nextState);
+    int pa = std::get<3>(nextState);
+    int pb = std::get<4>(nextState);
 
     std::array<int, BOARD_SIZE> currentBoard;
     for (int i = 0; i < BOARD_SIZE; i++) currentBoard[i] = board[i];

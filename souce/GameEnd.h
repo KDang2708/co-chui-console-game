@@ -1,5 +1,5 @@
 #pragma once
-#include "Model/Common.h"
+#include "Model/GameRules.h"
 
 class GameEnd {
 public:
