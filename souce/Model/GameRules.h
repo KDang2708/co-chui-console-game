@@ -14,9 +14,9 @@
 // =============================================================
 
 static const int BOARD_SIZE = 24;
-static const int PIECES_PER_PLAYER = 9;
+static const int PIECES_PER_PLAYER = 8;
 
-// Kết quả kiểm tra nước đi (riêng của GameRules, không đụng common.h)
+// Kết quả kiểm tra nước đi 
 enum class MoveResult {
     VALID,                  // Nước đi hợp lệ
     INVALID_OCCUPIED,       // Ô đích đã có quân
