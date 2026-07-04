@@ -1,12 +1,11 @@
-#pragma once
-#include "Model/Common.h"
+#ifndef GAMEEND_H
+#define GAMEEND_H
+
+#include "../Model/Common.h"
 
 class GameEnd {
 public:
-    static bool isGameOver(const int board[BOARD_SIZE], 
-                           Player currentPlayer,
-                           int piecesPlacedA,
-                           int piecesPlacedB,
-                           GamePhase currentPhase,
-                           Player& winner);
+    static bool isGameOver(const int board[24], int piecesA, int piecesB);
 };
+
+#endif

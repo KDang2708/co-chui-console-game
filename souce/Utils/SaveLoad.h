@@ -1,20 +1,13 @@
-#pragma once
-#include "Model/Common.h"
+#ifndef SAVELOAD_H
+#define SAVELOAD_H
+
+#include "../Model/Common.h"
 #include <string>
 
 class SaveLoad {
 public:
-    static bool saveGame(const int board[BOARD_SIZE], 
-                        Player currentTurn, 
-                        GameState currentState,
-                        int piecesPlacedA, 
-                        int piecesPlacedB,
-                        const std::string& filename = "savegame.txt");
-
-    static bool loadGame(int board[BOARD_SIZE], 
-                        Player& currentTurn, 
-                        GameState& currentState,
-                        int& piecesPlacedA, 
-                        int& piecesPlacedB,
-                        const std::string& filename = "savegame.txt");
+    static bool saveGame(const int board[24], Player currentTurn, GameState state, int piecesA, int piecesB, const std::string& filename);
+    static bool loadGame(int board[24], Player& currentTurn, GameState& state, int& piecesA, int& piecesB, const std::string& filename);
 };
+
+#endif

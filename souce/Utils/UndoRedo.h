@@ -1,17 +1,17 @@
-#pragma once
-#include "Model/Common.h"
+#ifndef UNDOREDO_H
+#define UNDOREDO_H
+
+#include "../Model/Common.h"
 #include <vector>
-#include <array>
 #include <tuple>
+#include <array>
 
 class UndoRedo {
-private:
-    static std::vector<std::tuple<std::array<int, BOARD_SIZE>, Player, GameState, int, int>> history;
-    static std::vector<std::tuple<std::array<int, BOARD_SIZE>, Player, GameState, int, int>> redoStack;
-
 public:
-    static void saveState(const int board[BOARD_SIZE], Player currentTurn, GameState state, int piecesA, int piecesB);
-    static bool undo(int board[BOARD_SIZE], Player& currentTurn, GameState& state, int& piecesA, int& piecesB);
-    static bool redo(int board[BOARD_SIZE], Player& currentTurn, GameState& state, int& piecesA, int& piecesB);
+    static void saveState(const int board[24], Player currentTurn, GameState state, int piecesA, int piecesB);
+    static bool undo(int board[24], Player& currentTurn, GameState& state, int& piecesA, int& piecesB);
+    static bool redo(int board[24], Player& currentTurn, GameState& state, int& piecesA, int& piecesB);
     static void clearHistory();
 };
+
+#endif
