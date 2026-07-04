@@ -12,6 +12,8 @@
 #include <GLFW/glfw3.h>
 #include "../souce/Model/GameRules.h"
 #include "../souce/Controller/GameEngine.h"
+#include "../souce/AI/AI_EasyMed.h"
+#include "../souce/AI/AI_Minimax.h"
 #include "../souce/Model/Common.h"
 
 static const int POSITION_INDEX[7][7] = {
@@ -41,38 +43,83 @@ static int getBoardIndex(int row, int col) { return POSITION_INDEX[row][col]; }
 // AI LOGIC
 // =========================================================================
 void performAIMove(GameEngine& engine) {
+    static AIEasyMed mediumAI(static_cast<unsigned int>(time(nullptr)));
+    static AIMinimax hardAI(5);
     const int* board = engine.getBoard();
     GameState state = engine.getCurrentState();
+    int currentTurn = engine.getCurrentTurn();
 
     if (state == PHASE_1_PLACING) {
-        std::vector<int> empties;
-        for (int i = 0; i < BOARD_SIZE; ++i) if (board[i] == EMPTY) empties.push_back(i);
-        if (empties.empty()) return;
         int choice = -1;
-        if (aiDifficulty == 1) {
-            int bestSpots[] = {4, 10, 13, 19, 1, 7, 16, 22, 0, 2, 6, 8, 15, 17, 21, 23, 3, 5, 9, 11, 12, 14, 18, 20};
-            for (int s : bestSpots) if (board[s] == EMPTY) { choice = s; break; }
+        if (aiDifficulty == 0) {
+            std::vector<int> empties;
+            for (int i = 0; i < BOARD_SIZE; ++i) if (board[i] == EMPTY) empties.push_back(i);
+            if (empties.empty()) return;
+            choice = empties[rand() % empties.size()];
+        } else if (aiDifficulty == 1) {
+            choice = mediumAI.chooseMediumPlacement(board, PLAYER_B);
+            if (choice == -1) {
+                std::vector<int> empties;
+                for (int i = 0; i < BOARD_SIZE; ++i) if (board[i] == EMPTY) empties.push_back(i);
+                if (empties.empty()) return;
+                choice = empties[rand() % empties.size()];
+            }
+        } else {
+            int playerPiecesInHand = PIECES_PER_PLAYER - engine.getPiecesPlacedB();
+            int opponentPiecesInHand = PIECES_PER_PLAYER - engine.getPiecesPlacedA();
+            choice = hardAI.chooseHardPlacement(board, PLAYER_B, playerPiecesInHand, opponentPiecesInHand);
         }
-        if (choice == -1) choice = empties[rand() % empties.size()]; 
-        engine.placePiece(choice);
-    } 
-    else if (state == PHASE_2_MOVING) {
-        std::vector<std::pair<int, int>> validMoves;
-        for (int i = 0; i < BOARD_SIZE; ++i) {
-            if (board[i] == PLAYER_B) {
-                for (int adj : ADJACENCY_LIST[i]) if (board[adj] == EMPTY) validMoves.push_back({i, adj});
+        if (choice != -1) engine.placePiece(choice);
+    } else if (state == PHASE_2_MOVING) {
+        if (aiDifficulty == 0) {
+            std::vector<std::pair<int, int>> validMoves;
+            for (int i = 0; i < BOARD_SIZE; ++i) {
+                if (board[i] == PLAYER_B) {
+                    for (int adj : ADJACENCY_LIST[i]) {
+                        if (board[adj] == EMPTY) validMoves.push_back({i, adj});
+                    }
+                }
+            }
+            if (validMoves.empty()) return;
+            auto move = validMoves[rand() % validMoves.size()];
+            engine.movePiece(move.first, move.second);
+        } else if (aiDifficulty == 1) {
+            AIMove move = mediumAI.chooseMediumMove(board, PLAYER_B);
+            if (move.valid) {
+                engine.movePiece(move.from, move.to);
+            } else {
+                std::vector<std::pair<int, int>> validMoves;
+                for (int i = 0; i < BOARD_SIZE; ++i) {
+                    if (board[i] == PLAYER_B) {
+                        for (int adj : ADJACENCY_LIST[i]) {
+                            if (board[adj] == EMPTY) validMoves.push_back({i, adj});
+                        }
+                    }
+                }
+                if (validMoves.empty()) return;
+                auto fallback = validMoves[rand() % validMoves.size()];
+                engine.movePiece(fallback.first, fallback.second);
+            }
+        } else {
+            AIMove move = hardAI.chooseHardMove(board, PLAYER_B);
+            if (move.valid) {
+                engine.movePiece(move.from, move.to);
             }
         }
-        if (validMoves.empty()) return; 
-        auto move = validMoves[rand() % validMoves.size()];
-        engine.movePiece(move.first, move.second);
-    } 
-    else if (state == MILL_STRIKE) {
-        std::vector<int> removable = GameRules::getRemovablePieces(board, PLAYER_A);
-        if (!removable.empty()) {
-            int choice = removable[rand() % removable.size()];
-            engine.removePiece(choice);
+    } else if (state == MILL_STRIKE) {
+        int opponent = (currentTurn == PLAYER_A) ? PLAYER_B : PLAYER_A;
+        std::vector<int> removable = GameRules::getRemovablePieces(board, opponent);
+        if (removable.empty()) return;
+        int choice = -1;
+        if (aiDifficulty == 2) {
+            choice = hardAI.choosePieceToRemove(board, opponent);
+            if (choice == -1) {
+                choice = removable[rand() % removable.size()];
+            }
+        } else {
+            choice = removable[rand() % removable.size()];
         }
+        engine.removePiece(choice);
     }
 }
 
@@ -168,9 +215,11 @@ int main(int, char**) {
             if (gameMode == 1) {
                 ImGui::Indent(30.0f);
                 ImGui::Dummy(ImVec2(0, 5));
-                ImGui::RadioButton("AI De (Ngau nhien)", &aiDifficulty, 0); 
+                ImGui::RadioButton("AI De (Ngau nhien)", &aiDifficulty, 0);
                 ImGui::Dummy(ImVec2(0, 5));
-                ImGui::RadioButton("AI Kho (Chien thuat)", &aiDifficulty, 1);
+                ImGui::RadioButton("AI Trung Binh (An/Chan)", &aiDifficulty, 1);
+                ImGui::Dummy(ImVec2(0, 5));
+                ImGui::RadioButton("AI Kho (Minimax + Alpha-Beta)", &aiDifficulty, 2);
                 ImGui::Unindent(30.0f);
             }
             ImGui::Unindent(20.0f);
