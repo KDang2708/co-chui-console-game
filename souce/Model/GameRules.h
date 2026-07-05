@@ -2,6 +2,7 @@
 #define GAMERULES_H
 
 #include <vector>
+#include "Common.h"
 
 // =============================================================
 //  GameRules.h  –  Game Logic cho Cờ Chùi (Nine Men's Morris)
@@ -11,16 +12,9 @@
 
 //  HẰNG SỐ & CẤU TRÚC DỮ LIỆU TOÀN CỤC
 
-// Tổng số ô trên bàn cờ (đánh số 0..23)
-static const int BOARD_SIZE = 24;
-
 // Tổng số quân cờ mỗi người chơi
-static const int PIECES_PER_PLAYER = 8;
-
-// Giá trị ô bàn cờ
-static const int EMPTY  = 0;
-static const int PLAYER1 = 1;
-static const int PLAYER2 = 2;
+static const int PLAYER1 = PLAYER_A;
+static const int PLAYER2 = PLAYER_B;
 
 // Trạng thái game (dùng chung với GameEngine)
 enum class GamePhase {
