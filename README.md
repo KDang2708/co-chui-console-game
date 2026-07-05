@@ -1,115 +1,80 @@
-Dưới đây là toàn bộ nội dung file **`README.md`** được thiết kế chuẩn hóa, trực quan và chuyên nghiệp bằng Markdown để bạn có thể copy trực tiếp vào dự án của mình:
+# 🎮 Cờ Chùi - Nine Men's Morris
 
-```markdown
-# 🎮 Console Game: Cờ Chùi (Nine Men's Morris) - C++ Version
+Dự án trò chơi Cờ Chùi được xây dựng bằng C++ với giao diện hiện đại sử dụng ImGui và GLFW. Trò chơi hỗ trợ chế độ người chơi đối kháng và chơi với AI ở nhiều mức độ khó khác nhau.
 
-Đồ án môn học xây dựng trò chơi **Cờ Chùi** (một biến thể của Nine Men's Morris) chạy trên nền tảng Console bằng ngôn ngữ C++. Dự án được tổ chức và phát triển theo mô hình kiến trúc **MVC (Model - View - Controller)** kết hợp với **AI Engine**, tối ưu hóa cho quy mô nhóm **6 thành viên**.
+## ✨ Tính năng
 
----
+- Chế độ PvP (người vs người)
+- Chế độ PvE (người vs AI)
+- AI ở 3 mức: dễ, trung bình, khó
+- Luật chơi đầy đủ của Cờ Chùi: đặt quân, di chuyển quân, tạo mill và ăn quân đối thủ
+- Hỗ trợ một số tính năng quản lý trạng thái như lưu/đọc trò chơi, undo/redo
 
-## 📌 1. Kiến Trúc Hệ Thống (Architecture)
+## 🧩 Kiến trúc dự án
 
-Để tránh xung đột code (conflict) khi làm việc nhóm 6 người, dự án được chia làm 4 phân hệ độc lập:
+Dự án được tổ chức theo hướng phân lớp rõ ràng:
 
-* **Model:** Quản lý cấu trúc dữ liệu bàn cờ, trạng thái quân cờ và kiểm tra tính hợp lệ của luật chơi.
-* **View:** Xử lý hiển thị đồ họa ASCII, xuất giao diện trực quan ra màn hình Console.
-* **Controller:** Điều khiển luồng trò chơi (`Game Loop`), tiếp nhận input từ người dùng và điều phối các phân hệ khác.
-* **AI Engine:** Module xử lý trí tuệ nhân tạo độc lập cho chế độ chơi với Máy (Bot).
+- Model: xử lý bàn cờ, luật chơi, kiểm tra nước đi và điều kiện kết thúc
+- View: giao diện người dùng bằng ImGui
+- Controller: điều phối luồng trò chơi và trạng thái game
+- AI: triển khai các chiến lược chơi cho bot
 
-### 💡 Giải thuật & Cấu trúc dữ liệu cốt lõi
-* **Bàn cờ:** Biểu diễn bằng một mảng 1 chiều $24$ phần tử (`int board[24]`). Trong đó: `0` = Trống, `1` = Người chơi A, `2` = Người chơi B/Bot.
-* **Danh sách kề:** Mảng hằng số lưu trữ các cặp vị trí liền kề để phục vụ cho việc tính toán di chuyển hợp lệ (Giai đoạn 2).
-* **Danh sách Mill:** Mảng các bộ 3 vị trí tạo thành hàng thẳng để kiểm tra điều kiện ăn quân của đối thủ.
-
----
-
-## 📂 2. Cấu Trúc Thư Mục Dự Án (Folder Structure)
+## 📁 Cấu trúc thư mục
 
 ```text
-📁 CoChui_Console/
-│
-├── 📁 src/
-│   ├── 📁 Model/
-│   │   ├── Board.cpp         # Quản lý mảng bàn cờ, danh sách kề
-│   │   └── GameRules.cpp # Logic kiểm tra nước đi, kiểm tra hàng 3 (Mill)
-│   │
-│   ├── 📁 View/
-│   │   └── ConsoleUI.cpp # Vẽ giao diện ASCII, render màn hình
-│   │
-│   ├── 📁 Controller/
-│   │   └── GameEngine.cpp # Vòng lặp chính (Game Loop), quản lý trạng thái
-│   │
-│   ├── 📁 AI/
-│   │   ├── AI_EasyMed.cpp # Bot Rule-based (Ngẫu nhiên / Chặn/ Ăn ngay)
-│   │   └── AI_Minimax.cpp # Bot Khó (Minimax + Alpha-Beta Pruning)
-│   │
-│   └── main.cpp                        # Điểm khởi chạy ứng dụng
-│
-├── 📁 data/                            # Thư mục lưu trữ file Save/Load game
-├── 📁 docs/                            # Tài liệu báo cáo, Slide thuyết trình
-└── README.md                           # Hướng dẫn này
-
+.
+├── CoChui_UI/            # Giao diện đồ họa ImGui/GLFW
+│   ├── main.cpp
+│   ├── backend/
+│   ├── imgui/
+│   └── include/
+├── souce/
+│   ├── AI/               # AI Easy/Medium/Hard
+│   ├── Controller/       # GameEngine
+│   ├── Model/            # Logic bàn cờ, luật chơi
+│   ├── View/             # Console UI
+│   ├── GameEnd.cpp/.h
+│   ├── SaveLoad.cpp/.h
+│   ├── UndoRedo.cpp/.h
+│   └── ...
+└── README.md
 ```
 
----
+## 🛠️ Yêu cầu
 
-## 👥 3. Phân Rã Công Việc & Phân Công Thành Viên (WBS)
+- Trình biên dịch C++ hỗ trợ C++17 trở lên
+- Windows (khuyến nghị) với MinGW hoặc MSVC
+- Thư viện GLFW và OpenGL có sẵn trong thư mục CoChui_UI
 
-| Thành viên | Vai trò | Nhiệm vụ chi tiết | File đảm nhận |
-| --- | --- | --- | --- |
-| **TV 1** | **Team Leader & Architect** | Thiết kế Cấu trúc dữ liệu tổng thể; Xây dựng `Game Loop` điều phối luồng chuyển phase; Tích hợp code tổng thể. | `main.cpp`, `GameEngine.*` |
-| **TV 2** | **Game Logic Specialist** | Viết hàm kiểm tra nước đi hợp lệ (Phase 1 & 2); Logic kiểm tra hàng 3 (Mill); Xử lý ăn quân đối thủ. | `GameRules.*` |
-| **TV 3** | **UI/UX Developer** | Thiết kế giao diện bàn cờ ASCII (3 hình vuông lồng nhau); Cập nhật màn hình; Xử lý nhập liệu (Tọa độ/Phím mũi tên). | `ConsoleUI.*` |
-| **TV 4** | **AI Bot Developer (Easy/Med)** | Xây dựng Bot Rule-based: Chọn nước ngẫu nhiên (Dễ); Biết ưu tiên ăn quân hoặc chặn đối thủ tạo hàng 3 (Trung bình). | `AI_EasyMed.*` |
-| **TV 5** | **AI Expert (Hard)** | Cài đặt thuật toán Minimax kết hợp Cắt tỉa Alpha-Beta; Thiết kế hàm đánh giá trạng thái bàn cờ (Evaluation Function). | `AI_Minimax.*` |
-| **TV 6** | **Tester & Feature Developer** | Viết hàm kiểm tra điều kiện kết thúc game; Code tính năng Save/Load game và Undo/Redo; Làm báo cáo & slide. | `Board.*` (phần phụ), `docs/` |
+## ▶️ Cách biên dịch và chạy
 
----
+### Windows với MinGW
 
-## 🎮 4. Quy Trình Vận Hành Trò Chơi (Game Flow)
-
-Trò chơi sẽ trải qua lần lượt các trạng thái (Phases) được quản lý chặt chẽ bởi `GameEngine`:
-
-1. **Giai đoạn 1 (Đặt quân):** Mỗi người chơi lần lượt đặt 9 quân cờ của mình vào các vị trí trống trên bàn cờ.
-2. **Giai đoạn 2 (Di chuyển quân):** Người chơi di chuyển một quân cờ sang vị trí trống liền kề có đường nối.
-3. **Luật Ăn Quân (Mill):** Ở cả hai giai đoạn, nếu tạo thành một hàng 3 quân cùng màu thẳng hàng, người chơi được chỉ định xóa 1 quân bất kỳ của đối thủ (không nằm trong một hàng 3 khác trừ khi không còn lựa chọn nào khác).
-4. **Kết thúc:** Game kết thúc khi một bên chỉ còn dưới 3 quân hoặc không còn nước đi hợp lệ.
-
----
-
-## 🛠️ 5. Hướng Dẫn Biên Dịch & Chạy Game
-
-### Yêu cầu hệ thống
-
-* Trình biên dịch C++ hỗ trợ tiêu chuẩn **C++11** trở lên (GCC/G++, MSVC, Clang).
-* Hệ điều hành: Windows (Sử dụng `<windows.h>`) hoặc Linux/macOS (Sử dụng `<ncurses.h>` nếu cần tối ưu giao diện).
-
-### Biên dịch bằng Terminal (Command Line)
-
-Di chuyển vào thư mục gốc của dự án và chạy lệnh sau:
+Ví dụ lệnh biên dịch:
 
 ```bash
-# Biên dịch tất cả các file source code thành file thực thi CoChuiGame
-g++ -std=c++11 src/main.cpp src/Model/*.cpp src/View/*.cpp src/Controller/*.cpp src/AI/*.cpp -o CoChuiGame
-
-# Chạy game trên Windows
-CoChuiGame.exe
-
-# Chạy game trên Linux/macOS
-./CoChuiGame
-
+g++ -std=c++17 -I. -ICoChui_UI -ICoChui_UI/include -ICoChui_UI/backend -ICoChui_UI/imgui ^
+    CoChui_UI/main.cpp CoChui_UI/backend/imgui_impl_glfw.cpp CoChui_UI/backend/imgui_impl_opengl3.cpp ^
+    CoChui_UI/imgui/imgui.cpp CoChui_UI/imgui/imgui_draw.cpp CoChui_UI/imgui/imgui_tables.cpp CoChui_UI/imgui/imgui_widgets.cpp ^
+    souce/Model/Board.cpp souce/Model/GameRule.cpp souce/Controller/GameEngine.cpp ^
+    souce/AI/AI_EasyMed.cpp souce/AI/AI_Minimax.cpp souce/GameEnd.cpp souce/SaveLoad.cpp souce/UndoRedo.cpp ^
+    -o CoChui.exe -LCoChui_UI/lib -lglfw3 -lopengl32 -lgdi32 -luser32
 ```
 
----
+Sau đó chạy:
 
-## 🤝 6. Quy Định Đóng Góp Code (Git Workflow)
-
-Để đảm bảo tiến độ và không đè code lên nhau, các thành viên tuân thủ quy tắc:
-
-1. Không được `push` trực tiếp lên nhánh `main`.
-2. Mỗi thành viên tạo một nhánh riêng theo tên module: `feature/model`, `feature/view`, `feature/ai-hard`,...
-3. Tạo **Pull Request (PR)** và cần được Team Leader (`TV 1`) duyệt sau khi đã qua kiểm tra lỗi từ Tester (`TV 6`) trước khi merge vào `main`.
-
+```bash
+CoChui.exe
 ```
 
+## 🎯 Luật chơi cơ bản
+
+1. Giai đoạn 1: đặt quân lên bàn cờ.
+2. Giai đoạn 2: di chuyển quân đến vị trí trống liền kề.
+3. Khi tạo thành mill, người chơi có thể loại bỏ một quân của đối thủ.
+4. Trò chơi kết thúc khi một bên còn ít hơn 3 quân hoặc không còn nước đi hợp lệ.
+
+## 👥 Ghi chú
+
+Dự án này phù hợp để học tập về lập trình hướng đối tượng, cấu trúc MVC, thuật toán AI và phát triển game C++.
 ```
